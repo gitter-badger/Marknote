@@ -9,8 +9,9 @@
   },
   "chromium-args": "--disable-web-security",
   "dependencies": {
+    "highlight.js": "*",
     "marked": "~0.3.2",
-    "highlight.js": "*"
+    "pouchdb": "^3.0.5"
   },
   "devDependencies": {
     "node-webkit-builder": "*",
