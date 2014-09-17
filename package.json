@@ -34,13 +34,8 @@
   },
   "homepage": "https://github.com/octalmage/Marknote",
   "chromium-args": "--disable-web-security",
-<<<<<<< HEAD
-  "dependencies": {
-    "highlight.js": "*",
-=======
   "dependencies": 
   {
->>>>>>> master
     "marked": "~0.3.2",
     "pouchdb": "^3.0.5"
   },
