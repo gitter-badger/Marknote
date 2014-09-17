@@ -2,6 +2,13 @@ var gui = require('nw.gui');
 var win = gui.Window.get();
 var clipboard = gui.Clipboard.get();
 
+var db = new PouchDB("notes");
+var remoteCouch = false;
+
+var driver="pouchdb";
+
+var notes_pouchdb=[];
+
 //Needed for copy,cut,paste menu on Mac.
 if (process.platform=="darwin")
 {
@@ -227,40 +234,14 @@ $(document).on("ready",function()
 	}, function ()
 	{})
 
-	store.exists("notes", function (s)
-	{
-		if (s===false)
-		{
-			store.save({key:'notes', notes: defaultnote});
-			notes=defaultnote;
-		}
-		else
-		{
-		
-			store.get("notes", function (n)
-			{
-				notes=n.notes;
-			
-			});
-		}
-	});
 
+	getNotes();
 
-
-	updateList();
-	preloadCache();
-
-	loadNote(current);
-	selectItem(current);
 
 	window.addEventListener('polymer-ready', function(e) 
 	{
 		document.getElementById("0").selected="yes";
 	});
-	
-
-	$("#display").html(markdown);
-
 
 	$("paper-icon-button[icon='close']").on("click", function()
 	{
@@ -296,6 +277,15 @@ $(document).on("ready",function()
 		}
 	});
 });
+
+function startup()
+{
+	updateList();
+	preloadCache();
+
+	loadNote(current);
+	selectItem(current);
+}
 
 //Very cusom Renderer.
 function render(markdown)
@@ -351,7 +341,93 @@ function switchDisplay(mode)
 
 function saveNotes()
 {
-	return store.save({key:'notes', notes:notes});
+	if (driver=="lawnchair")
+	{
+		return store.save({key:'notes', notes:notes});
+	}
+	else if (driver=="pouchdb")
+	{
+		
+		for (x in notes)
+		{
+			console.log("x: " + x);
+			db.remove(notes_pouchdb[x]);
+			var note = 
+ 			{
+    			_id: x,
+    			body: notes[x]
+  			};
+  			db.put(note, function callback(err, result) 
+  			{
+  			 	if (!err) 
+  			 	{
+  				   	console.log('Successfully added note.');
+  				}
+			});
+		}
+
+	}
+}
+
+function getNotes()
+{
+	if (driver=="lawnchair")
+	{
+		store.exists("notes", function (s)
+		{
+			if (s===false)
+			{
+				store.save({key:'notes', notes: defaultnote});
+				notes=defaultnote;
+			}
+			else
+			{
+				store.get("notes", function (n)
+				{
+					notes=n.notes;
+			
+				});
+			}
+			startup();
+		});
+	}
+	else if (driver="pouchdb")
+	{	
+		notes=defaultnote;
+
+		db.allDocs({include_docs: true, descending: false}, function(err, doc) 
+ 		{
+ 			console.log(doc);
+ 			if (doc.rows.length==0)
+ 			{
+ 				notes=defaultnote;
+ 				var note = 
+ 				{
+    				_id: "0",
+    				body: defaultnote
+  				};
+
+  				db.put(note, function callback(err, result) 
+  				{
+  				 	if (!err) 
+  				 	{
+  				    	console.log('Successfully added note.');
+  				 	}
+				});
+ 			}
+ 			else
+ 			{
+ 				for (x in doc.rows)
+ 				{
+ 					notes.push(doc.rows[x].doc.body[0]);
+ 					notes_pouchdb[x]=doc.rows[x];
+ 				}
+ 			}
+ 			
+ 		});
+ 		startup();
+ 		
+	}
 }
 
 function updateList()
